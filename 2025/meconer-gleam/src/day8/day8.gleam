@@ -87,7 +87,7 @@ fn do_connections(
             [new_set, ..other_sets]
           }
           // Below if only k1 is in a set. 
-          _ -> panic as "k2 id not in a set. Should not happen"
+          _ -> panic as "k2 is not in a set. Should not happen"
         }
       }
       _ -> panic as "k1 is not in a set. Should not happen"
@@ -128,13 +128,13 @@ fn do_connections_p2(
             }
           }
           _ ->
-            // Only k1 is in a set. Should not happen in p2
+            // Only k1 is in a set. Should not happen
             panic as "Should not reach here"
         }
       }
       _ ->
         // Neither k1 is not in a set.
-        // In p2 we should never reach this case
+        // We should never reach this case
         panic as "Should not reach here"
     }
   })
