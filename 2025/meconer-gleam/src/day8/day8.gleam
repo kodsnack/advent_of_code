@@ -74,15 +74,23 @@ fn do_connections(
   // Use only the first connect_cnt pairs, 10 resp 1000 in the example and real problem
   |> list.fold(start_sets, fn(acc, pair_dist) {
     let #(#(k1, k2), _dist) = pair_dist
-    let assert Ok(k1_set) = list.find(acc, fn(kset) { set.contains(kset, k1) })
-    let assert Ok(k2_set) = list.find(acc, fn(kset) { set.contains(kset, k2) })
-    let new_set = set.union(k1_set, k2_set)
-    let other_sets =
-      list.filter(acc, fn(kset) {
-        // remove the sets that contains k1 or k2
-        !{ set.contains(kset, k1) || set.contains(kset, k2) }
+
+    // Split the list of sets into one with sets containg k1 or k2. Should be one or two sets
+    let #(containing_sets, other_sets) =
+      list.partition(acc, fn(kset) {
+        set.contains(kset, k1) || set.contains(kset, k2)
       })
-    [new_set, ..other_sets]
+    case containing_sets {
+      [k1_set, k2_set] -> {
+        // Two different sets. Join them
+        let new_set = set.union(k1_set, k2_set)
+        [new_set, ..other_sets]
+      }
+
+      [_set_with_both] -> acc
+      // This set contains both k1 and k2 so no need to do anything
+      _ -> panic as "No sets found for k1 and/or k2"
+    }
   })
 }
 
@@ -99,23 +107,28 @@ fn do_connections_p2(
   |> list.fold_until(#(#(0, 0), start_sets), fn(acc, pair_dist) {
     let #(#(k1, k2), _dist) = pair_dist
     let #(_, conn_sets) = acc
-    // Find the sets containing k1 and k2
-    let assert Ok(k1_set) =
-      list.find(conn_sets, fn(kset) { set.contains(kset, k1) })
-    let assert Ok(k2_set) =
-      list.find(conn_sets, fn(kset) { set.contains(kset, k2) })
-    // Join the sets. They could be the same
-    let new_set = set.union(k1_set, k2_set)
-    let other_sets =
-      list.filter(conn_sets, fn(kset) {
-        // remove the sets that contains k1 or k2
-        !{ set.contains(kset, k1) || set.contains(kset, k2) }
+
+    // Split the list of sets into one with sets containg k1 or k2. Should be one or two sets
+    let #(containing_sets, other_sets) =
+      list.partition(conn_sets, fn(kset) {
+        set.contains(kset, k1) || set.contains(kset, k2)
       })
+    let new_sets = case containing_sets {
+      [k1_set, k2_set] -> {
+        // Two different sets. Join them
+        let new_set = set.union(k1_set, k2_set)
+        [new_set, ..other_sets]
+      }
+
+      [_set_with_both] -> conn_sets
+      // This set contains both k1 and k2 so no need to do anything
+      _ -> panic as "No sets found for k1 and/or k2"
+    }
     case list.is_empty(other_sets) {
       // If these two sets are the only sets left, we should stop and return this pair
-      True -> list.Stop(#(#(k1, k2), [new_set]))
+      True -> list.Stop(#(#(k1, k2), []))
       // There are other sets left. Continue to connect
-      False -> list.Continue(#(#(0, 0), [new_set, ..other_sets]))
+      False -> list.Continue(#(#(0, 0), new_sets))
     }
   })
 }
