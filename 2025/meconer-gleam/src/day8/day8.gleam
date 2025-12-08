@@ -2,7 +2,6 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/result
 import gleam/set
 import gleam/string
 import utils
@@ -23,11 +22,14 @@ fn sq_dist(p1: Coord, p2: Coord) -> Int {
 
 fn get_input(path: String) -> dict.Dict(Int, Coord) {
   // Read input and make a dictionary with the line index as key
-  let coords =
+  let junctions =
     utils.get_input_lines(path)
     |> list.map(fn(l) {
       string.split(l, ",")
-      |> list.map(fn(s) { int.parse(s) |> result.unwrap(-1) })
+      |> list.map(fn(s) {
+        let assert Ok(n) = int.parse(s)
+        n
+      })
     })
     |> list.map(fn(l) {
       case l {
@@ -35,19 +37,19 @@ fn get_input(path: String) -> dict.Dict(Int, Coord) {
         _ -> panic as "Wrong coords"
       }
     })
-  list.index_fold(coords, dict.new(), fn(coord_dict, coord, idx) {
+  list.index_fold(junctions, dict.new(), fn(coord_dict, coord, idx) {
     dict.insert(coord_dict, idx, coord)
   })
 }
 
-fn calc_all_dists(coords: dict.Dict(Int, Coord)) -> List(#(#(Int, Int), Int)) {
+fn calc_all_dists(junctions: dict.Dict(Int, Coord)) -> List(#(#(Int, Int), Int)) {
   // Calculate the distance between all combinations of junction coords
-  list.range(0, dict.size(coords) - 1)
+  list.range(0, dict.size(junctions) - 1)
   |> list.combination_pairs()
   |> list.fold([], fn(acc, pair) {
     let #(k1, k2) = pair
-    let coord1 = dict.get(coords, k1) |> result.unwrap(Coord(0, 0, 0))
-    let coord2 = dict.get(coords, k2) |> result.unwrap(Coord(0, 0, 0))
+    let assert Ok(coord1) = dict.get(junctions, k1)
+    let assert Ok(coord2) = dict.get(junctions, k2)
     let sd = sq_dist(coord1, coord2)
     [#(pair, sd), ..acc]
   })
@@ -64,7 +66,7 @@ fn do_connections(
   coord_size: Int,
 ) -> List(set.Set(Int)) {
   // Make a list of start_sets with each junction in a separate set
-  // so all junctions are in a set. This simplifies the fold below
+  // so all junctions are in a set. 
   let start_sets =
     list.range(0, coord_size - 1)
     |> list.map(fn(n) { set.new() |> set.insert(n) })
@@ -72,26 +74,15 @@ fn do_connections(
   // Use only the first connect_cnt pairs, 10 resp 1000 in the example and real problem
   |> list.fold(start_sets, fn(acc, pair_dist) {
     let #(#(k1, k2), _dist) = pair_dist
-    case list.find(acc, fn(kset) { set.contains(kset, k1) }) {
-      Ok(k1_set) -> {
-        // k1 is already in a set
-        case list.find(acc, fn(kset) { set.contains(kset, k2) }) {
-          Ok(k2_set) -> {
-            // k2 is also in a set. We need to combine them
-            let new_set = set.union(k1_set, k2_set)
-            let other_sets =
-              list.filter(acc, fn(kset) {
-                // remove the sets that contains k1 or k2
-                !{ set.contains(kset, k1) || set.contains(kset, k2) }
-              })
-            [new_set, ..other_sets]
-          }
-          // Below if only k1 is in a set. 
-          _ -> panic as "k2 is not in a set. Should not happen"
-        }
-      }
-      _ -> panic as "k1 is not in a set. Should not happen"
-    }
+    let assert Ok(k1_set) = list.find(acc, fn(kset) { set.contains(kset, k1) })
+    let assert Ok(k2_set) = list.find(acc, fn(kset) { set.contains(kset, k2) })
+    let new_set = set.union(k1_set, k2_set)
+    let other_sets =
+      list.filter(acc, fn(kset) {
+        // remove the sets that contains k1 or k2
+        !{ set.contains(kset, k1) || set.contains(kset, k2) }
+      })
+    [new_set, ..other_sets]
   })
 }
 
@@ -108,42 +99,31 @@ fn do_connections_p2(
   |> list.fold_until(#(#(0, 0), start_sets), fn(acc, pair_dist) {
     let #(#(k1, k2), _dist) = pair_dist
     let #(_, conn_sets) = acc
-    case list.find(conn_sets, fn(kset) { set.contains(kset, k1) }) {
-      Ok(k1_set) -> {
-        // k1 is already in a set
-        case list.find(conn_sets, fn(kset) { set.contains(kset, k2) }) {
-          Ok(k2_set) -> {
-            // k2 is also in a set. We need to combine them
-            let new_set = set.union(k1_set, k2_set)
-            let other_sets =
-              list.filter(conn_sets, fn(kset) {
-                // remove the sets that contains k1 or k2
-                !{ set.contains(kset, k1) || set.contains(kset, k2) }
-              })
-            case list.is_empty(other_sets) {
-              // If these two sets are the only sets left, we should stop and return this pair
-              True -> list.Stop(#(#(k1, k2), [new_set]))
-              // There are other sets left. Continue to connect
-              False -> list.Continue(#(#(0, 0), [new_set, ..other_sets]))
-            }
-          }
-          _ ->
-            // Only k1 is in a set. Should not happen
-            panic as "Should not reach here"
-        }
-      }
-      _ ->
-        // Neither k1 is not in a set.
-        // We should never reach this case
-        panic as "Should not reach here"
+    // Find the sets containing k1 and k2
+    let assert Ok(k1_set) =
+      list.find(conn_sets, fn(kset) { set.contains(kset, k1) })
+    let assert Ok(k2_set) =
+      list.find(conn_sets, fn(kset) { set.contains(kset, k2) })
+    // Join the sets. They could be the same
+    let new_set = set.union(k1_set, k2_set)
+    let other_sets =
+      list.filter(conn_sets, fn(kset) {
+        // remove the sets that contains k1 or k2
+        !{ set.contains(kset, k1) || set.contains(kset, k2) }
+      })
+    case list.is_empty(other_sets) {
+      // If these two sets are the only sets left, we should stop and return this pair
+      True -> list.Stop(#(#(k1, k2), [new_set]))
+      // There are other sets left. Continue to connect
+      False -> list.Continue(#(#(0, 0), [new_set, ..other_sets]))
     }
   })
 }
 
 pub fn day8p1(path: String, conn_cnt: Int) -> Int {
-  let coords = get_input(path)
-  let pair_dists = calc_all_dists(coords)
-  let connections = do_connections(pair_dists, conn_cnt, dict.size(coords))
+  let junctions = get_input(path)
+  let pair_dists = calc_all_dists(junctions)
+  let connections = do_connections(pair_dists, conn_cnt, dict.size(junctions))
   let conn_sizes =
     list.map(connections, fn(conn_set) { set.size(conn_set) })
     |> list.sort(fn(a, b) { int.compare(b, a) })
@@ -155,12 +135,12 @@ pub fn day8p1(path: String, conn_cnt: Int) -> Int {
 }
 
 pub fn day8p2(path: String) -> Int {
-  let coords = get_input(path)
-  let pair_dists = calc_all_dists(coords)
+  let junctions = get_input(path)
+  let pair_dists = calc_all_dists(junctions)
   let #(last_pair, _connections) =
-    do_connections_p2(pair_dists, dict.size(coords))
-  let c1 = dict.get(coords, last_pair.0) |> result.unwrap(Coord(0, 0, 0))
-  let c2 = dict.get(coords, last_pair.1) |> result.unwrap(Coord(0, 0, 0))
+    do_connections_p2(pair_dists, dict.size(junctions))
+  let assert Ok(c1) = dict.get(junctions, last_pair.0)
+  let assert Ok(c2) = dict.get(junctions, last_pair.1)
   let res = c1.x * c2.x
   io.println("Day 8 part 2 : " <> int.to_string(res))
   res
