@@ -133,10 +133,10 @@ import day10/day10
 
 pub fn day10p1_test() {
   let res = day10.day10p1("src/day10/sample.txt")
-  assert res == 50
+  assert res == 7
 }
 
 pub fn day10p2_test() {
   let res = day10.day10p2("src/day10/sample.txt")
-  assert res == 24
+  assert res == 33
 }
