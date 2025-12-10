@@ -53,15 +53,16 @@ fn rec_try_buttons(
   visited: set.Set(Int),
   target: Int,
   buttons: List(Int),
-) {
+) -> Result(State, String) {
   case queue {
     [] -> Error("Target unreachable")
     [curr_state, ..rest] -> {
       case curr_state.value == target {
         True -> Ok(curr_state)
         False -> {
-          let new_queue =
-            list.fold(buttons, [], fn(acc, button) {
+          let #(new_queue, new_visited) =
+            list.fold(buttons, #(rest, visited), fn(acc, button) {
+              let #(curr_queue, curr_visited) = acc
               let new_state =
                 State(
                   value: int.bitwise_exclusive_or(curr_state.value, button),
@@ -69,34 +70,44 @@ fn rec_try_buttons(
                 )
               case set.contains(visited, new_state.value) {
                 True -> acc
-                False -> [new_state, ..acc]
+                False -> {
+                  #(
+                    list.append(curr_queue, [new_state]),
+                    set.insert(curr_visited, new_state.value),
+                  )
+                }
               }
             })
-          rec_try_buttons(new_queue)
+          rec_try_buttons(new_queue, new_visited, target, buttons)
         }
       }
     }
   }
 }
 
-fn try_buttons(wanted: Int, buttons: List(Int)) -> Int {
+fn try_buttons(wanted: Int, buttons: List(Int)) -> State {
   let initial_state = State([], 0)
   let visited = set.new() |> set.insert(0)
   let queue = [initial_state]
-  rec_try_buttons(queue, visited, wanted, buttons) |> result.unwrap(0)
+  let final_state = rec_try_buttons(queue, visited, wanted, buttons)
+  case final_state {
+    Ok(state) -> state
+    Error(s) -> panic as s
+  }
 }
 
 pub fn day10p1(path: String) -> Int {
   let inp =
     get_input(path)
     |> parse_p1
-    |> echo
 
-  list.map(inp, fn(part) {
-    let #(wanted, buttons) = part
-    let count = try_buttons(wanted, buttons)
-  })
-  let res = 0
+  let res =
+    list.map(inp, fn(part) {
+      let #(wanted, buttons) = part
+      let final_state = try_buttons(wanted, buttons)
+      list.length(final_state.buttons_pressed)
+    })
+    |> list.fold(0, fn(acc, el) { acc + el })
   io.println("Day 10 part 1 : " <> int.to_string(res))
   res
 }
