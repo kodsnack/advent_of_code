@@ -45,15 +45,45 @@ fn parse_p1(input) {
 }
 
 type State {
-  State(button_pressed: List(Int), value: Int)
+  State(buttons_pressed: List(Int), value: Int)
+}
+
+fn rec_try_buttons(
+  queue: List(State),
+  visited: set.Set(Int),
+  target: Int,
+  buttons: List(Int),
+) {
+  case queue {
+    [] -> Error("Target unreachable")
+    [curr_state, ..rest] -> {
+      case curr_state.value == target {
+        True -> Ok(curr_state)
+        False -> {
+          let new_queue =
+            list.fold(buttons, [], fn(acc, button) {
+              let new_state =
+                State(
+                  value: int.bitwise_exclusive_or(curr_state.value, button),
+                  buttons_pressed: [button, ..curr_state.buttons_pressed],
+                )
+              case set.contains(visited, new_state.value) {
+                True -> acc
+                False -> [new_state, ..acc]
+              }
+            })
+          rec_try_buttons(new_queue)
+        }
+      }
+    }
+  }
 }
 
 fn try_buttons(wanted: Int, buttons: List(Int)) -> Int {
-  let indicator = 0
-  let visited_state = set.new() |> set.insert(State([], 0))
-  //Initial value
-  let queue = []
-  0
+  let initial_state = State([], 0)
+  let visited = set.new() |> set.insert(0)
+  let queue = [initial_state]
+  rec_try_buttons(queue, visited, wanted, buttons) |> result.unwrap(0)
 }
 
 pub fn day10p1(path: String) -> Int {
