@@ -63,8 +63,6 @@ fn parse_p2(input) {
         string.split(butt_str, ",")
         |> list.map(fn(s) { int.parse(s) |> result.unwrap(-1) })
       })
-      |> list.index_map(fn(btl, idx) { #(idx, btl) })
-      |> dict.from_list
     #(j_levels, buttons)
   })
 }
@@ -137,104 +135,80 @@ pub fn day10p1(path: String) -> Int {
   res
 }
 
-type P2State {
-  P2State(buttons_pressed: List(List(Int)), value: dict.Dict(Int, Int))
+fn do_press(
+  curr_joltage_levels: dict.Dict(Int, Int),
+  curr_press_count: Int,
+  curr_level_idx: Int,
+) -> dict.Dict(Int, Int) {
+  let curr_level =
+    dict.get(curr_joltage_levels, curr_level_idx) |> result.unwrap(-1)
+  dict.insert(
+    curr_joltage_levels,
+    curr_level_idx,
+    curr_level + curr_press_count,
+  )
 }
 
-fn press_button(j_levels: dict.Dict(Int, Int), buttons) {
-  list.fold(buttons, j_levels, fn(new_js, button) {
-    let curr_count = dict.get(j_levels, button) |> result.unwrap(-1)
-    dict.insert(new_js, button, curr_count + 1)
-  })
-}
+fn try_buttons_p2(
+  curr_press_count: Int,
+  curr_level_idx: Int,
+  curr_joltage_levels: dict.Dict(Int, Int),
+  target_joltage_levels: dict.Dict(Int, Int),
+  max_presses: dict.Dict(Int, Int),
+  cnt,
+) {
+  case curr_joltage_levels == target_joltage_levels {
+    True -> Ok(cnt)
+    False -> {
+      let new_joltages =
+        do_press(curr_joltage_levels, curr_press_count, curr_level_idx)
 
-fn overflowed_state(curr: dict.Dict(Int, Int), target: dict.Dict(Int, Int)) {
-  list.range(0, dict.size(curr) - 1)
-  |> list.any(fn(key) {
-    let assert Ok(cv) = dict.get(curr, key)
-    let assert Ok(tv) = dict.get(target, key)
-    cv > tv
-  })
-}
-
-fn rec_try_buttons_p2(
-  queue: List(P2State),
-  visited: set.Set(dict.Dict(Int, Int)),
-  target: dict.Dict(Int, Int),
-  buttons: List(List(Int)),
-) -> Result(P2State, String) {
-  case queue {
-    [] -> Error("Target unreachable")
-
-    [curr_state, ..rest] -> {
-      case overflowed_state(curr_state.value, target) {
-        True -> {
-          rec_try_buttons_p2(rest, visited, target, buttons)
-        }
-        False -> {
-          case curr_state.value == target {
-            True -> Ok(curr_state)
-            False -> {
-              let #(new_queue, new_visited) =
-                list.fold(buttons, #(rest, visited), fn(acc, button) {
-                  let #(curr_queue, curr_visited) = acc
-                  let new_state =
-                    P2State(
-                      value: press_button(curr_state.value, button),
-                      buttons_pressed: [button, ..curr_state.buttons_pressed],
-                    )
-                  case set.contains(visited, new_state.value) {
-                    True -> acc
-                    False -> {
-                      #(
-                        list.append(curr_queue, [new_state]),
-                        set.insert(curr_visited, new_state.value),
-                      )
-                    }
-                  }
-                })
-              rec_try_buttons_p2(new_queue, new_visited, target, buttons)
-            }
-          }
-        }
-      }
+      Ok(-1)
     }
   }
 }
 
-fn try_buttons_p2(
-  target: dict.Dict(Int, Int),
-  buttons: List(List(Int)),
-) -> Result(P2State, String) {
-  let start_dict =
-    list.range(0, dict.size(target) - 1)
-    |> list.map(fn(idx) { #(idx, 0) })
+fn find_solution_p2(
+  joltage_levels: dict.Dict(Int, Int),
+  button_combs: List(List(Int)),
+) {
+  // For each target part, see which buttons are releveant to reach the wanted counter
+  let conn_cnt = dict.size(joltage_levels)
+  let max_presses =
+    button_combs
+    |> list.fold([], fn(acc, button_comb) {
+      let max_press =
+        list.fold(button_comb, 99_999, fn(acc, button_no) {
+          let presses_to_reach_target =
+            dict.get(joltage_levels, button_no) |> result.unwrap(-1)
+          case presses_to_reach_target < acc {
+            True -> presses_to_reach_target
+            False -> acc
+          }
+        })
+      [max_press, ..acc]
+    })
+    |> list.reverse
+    |> list.index_map(fn(el, idx) { #(idx, el) })
     |> dict.from_list
-  let initial_state = P2State([], start_dict)
-  let visited = set.new() |> set.insert(start_dict)
-  let queue = [initial_state]
-  rec_try_buttons_p2(queue, visited, target, buttons)
+  let start_joltages =
+    list.range(0, conn_cnt - 1)
+    |> list.map(fn(el) { #(el, 0) })
+    |> dict.from_list
+  let first_max = dict.get(max_presses, 0) |> result.unwrap(-1)
+  let first_press_range =
+    list.range(0, first_max)
+    |> echo
+  let sol =
+    try_buttons_p2(
+      first_press_range,
+      level_no,
+      start_joltages,
+      joltage_levels,
+      max_presses,
+      0,
+    )
 }
-
-// fn find_solution_p2(
-//   target: dict.Dict(Int, a),
-//   buttons: dict.Dict(Int, List(Int)),
-// ) {
-//   // For each target part, see which buttons are releveant to reach the wanted counter
-
-//   dict.fold(target, [], fn(acc, key, target_count) {
-//     let buttons_for_key =
-//       dict.filter(buttons, fn(key, target_count) {
-//         list.contains(counter_list, key)
-//       })
-//     case buttons_for_key {
-//       [] -> acc
-//       b_list -> [b_list, ..acc]
-//     }
-//   })
-//   |> list.reverse
-//   |> echo
-// }
 
 pub fn day10p2(path: String) -> Int {
   let inp =
@@ -244,7 +218,7 @@ pub fn day10p2(path: String) -> Int {
   let assert Ok(f) = list.first(inp)
 
   let #(target, buttons) = f
-  // let sol = find_solution_p2(target, buttons)
+  let sol = find_solution_p2(target, buttons)
   // let results =
   //   list.map(inp, fn(part) {
   //     let #(target, buttons) = part
