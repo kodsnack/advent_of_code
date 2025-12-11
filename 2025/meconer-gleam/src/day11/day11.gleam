@@ -26,10 +26,14 @@ fn count_paths(conns, start, target) {
   case start == target {
     True -> 1
     False -> {
-      let assert Ok(outputs) = dict.get(conns, start)
-      list.fold(outputs, 0, fn(acc, dev) {
-        acc + count_paths(conns, dev, target)
-      })
+      case dict.get(conns, start) {
+        Ok(outputs) -> {
+          list.fold(outputs, 0, fn(acc, dev) {
+            acc + count_paths(conns, dev, target)
+          })
+        }
+        Error(_) -> 0
+      }
     }
   }
 }
@@ -43,16 +47,7 @@ fn count_paths_p2(
 ) -> #(Int, dict.Dict(String, Int)) {
   case curr_dev == target {
     True -> {
-      echo path
-      let valid_path = list.contains(path, "fft") && list.contains(path, "dac")
-      echo valid_path
-      case valid_path {
-        True -> {
-          echo path
-          #(1, memo)
-        }
-        False -> #(0, memo)
-      }
+      #(1, memo)
     }
     False -> {
       case dict.has_key(memo, curr_dev) {
@@ -61,15 +56,19 @@ fn count_paths_p2(
           #(dict.get(memo, curr_dev) |> result.unwrap(-1), memo)
         }
         False -> {
-          let assert Ok(outputs) = dict.get(conns, curr_dev)
-          list.fold(outputs, #(0, memo), fn(acc, dev) {
-            let #(cnt, n_memo) =
-              count_paths_p2(conns, dev, target, [dev, ..path], acc.1)
-            let new_memo =
-              dict.merge(acc.1, n_memo)
-              |> dict.insert(dev, cnt)
-            #(acc.0 + cnt, new_memo)
-          })
+          case dict.get(conns, curr_dev) {
+            Ok(outputs) -> {
+              list.fold(outputs, #(0, memo), fn(acc, dev) {
+                let #(cnt, n_memo) =
+                  count_paths_p2(conns, dev, target, [dev, ..path], acc.1)
+                let new_memo =
+                  dict.merge(acc.1, n_memo)
+                  |> dict.insert(dev, cnt)
+                #(acc.0 + cnt, new_memo)
+              })
+            }
+            Error(_) -> #(0, memo)
+          }
         }
       }
     }
@@ -88,7 +87,10 @@ pub fn day11p2(path: String) -> Int {
   let conns = get_input(path)
 
   let memo: dict.Dict(String, Int) = dict.new()
-  let #(res, _memo) = count_paths_p2(conns, "svr", "out", [], memo)
+  let #(res1, _memo) = count_paths_p2(conns, "svr", "fft", [], memo)
+  let #(res2, _memo) = count_paths_p2(conns, "fft", "dac", [], memo)
+  let #(res3, _memo) = count_paths_p2(conns, "dac", "out", [], memo)
+  let res = res1 * res2 * res3
   io.println("Day 11 part 2 : " <> int.to_string(res))
   res
 }
