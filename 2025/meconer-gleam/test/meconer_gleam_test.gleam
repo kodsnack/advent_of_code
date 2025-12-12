@@ -6,7 +6,6 @@ import gleeunit
 pub fn main() -> Nil {
   gleeunit.main()
 }
-
 // gleeunit test functions end in `_test`
 // pub fn day1p1_test() {
 //   let res = day1.day1p1("src/day1/sample.txt")
@@ -152,14 +151,3 @@ pub fn main() -> Nil {
 //   let res = day11.day11p2("src/day11/sample2.txt")
 //   assert res == 2
 // }
-import day12/day12
-
-pub fn day12p1_test() {
-  let res = day12.day12p1("src/day12/sample.txt")
-  assert res == 0
-}
-
-pub fn day12p2_test() {
-  let res = day12.day12p2("src/day12/sample.txt")
-  assert res == 0
-}
