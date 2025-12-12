@@ -168,47 +168,51 @@ fn try_buttons_p2(
   }
 }
 
-fn find_solution_p2(
-  joltage_levels: dict.Dict(Int, Int),
-  button_combs: List(List(Int)),
-) {
-  // For each target part, see which buttons are releveant to reach the wanted counter
-  let conn_cnt = dict.size(joltage_levels)
-  let max_presses =
-    button_combs
-    |> list.fold([], fn(acc, button_comb) {
-      let max_press =
-        list.fold(button_comb, 99_999, fn(acc, button_no) {
-          let presses_to_reach_target =
-            dict.get(joltage_levels, button_no) |> result.unwrap(-1)
-          case presses_to_reach_target < acc {
-            True -> presses_to_reach_target
-            False -> acc
-          }
-        })
-      [max_press, ..acc]
-    })
-    |> list.reverse
-    |> list.index_map(fn(el, idx) { #(idx, el) })
-    |> dict.from_list
-  let start_joltages =
-    list.range(0, conn_cnt - 1)
-    |> list.map(fn(el) { #(el, 0) })
-    |> dict.from_list
-  let first_max = dict.get(max_presses, 0) |> result.unwrap(-1)
-  let first_press_range =
-    list.range(0, first_max)
-    |> echo
-  let sol =
-    try_buttons_p2(
-      first_press_range,
-      level_no,
-      start_joltages,
-      joltage_levels,
-      max_presses,
-      0,
-    )
-}
+// fn find_solution_p2(
+//   joltage_levels: dict.Dict(Int, Int),
+//   button_combs: List(List(Int)),
+// ) {
+//   // For each target part, see which buttons are releveant to reach the wanted counter
+//   let conn_cnt = dict.size(joltage_levels)
+//   let max_presses =
+//     button_combs
+//     |> list.fold([], fn(acc, button_comb) {
+//       let max_press =
+//         list.fold(button_comb, 99_999, fn(acc, button_no) {
+//           let presses_to_reach_target =
+//             dict.get(joltage_levels, button_no) |> result.unwrap(-1)
+//           case presses_to_reach_target < acc {
+//             True -> presses_to_reach_target
+//             False -> acc
+//           }
+//         })
+//       [max_press, ..acc]
+//     })
+//     |> list.reverse
+//     |> list.index_map(fn(el, idx) { #(idx, el) })
+//     |> dict.from_list
+//   let start_joltages =
+//     list.range(0, conn_cnt - 1)
+//     |> list.map(fn(el) { #(el, 0) })
+//     |> dict.from_list
+//   let first_max = dict.get(max_presses, 0) |> result.unwrap(-1)
+//   let first_press_range =
+//     list.range(0, first_max)
+//     |> list.map(fn(pc){
+//       list.range(1,conn_cnt-1)
+
+//     })
+//     |> echo
+//   let sol =
+//     try_buttons_p2(
+//       first_press_range,
+//       level_no,
+//       start_joltages,
+//       joltage_levels,
+//       max_presses,
+//       0,
+//     )
+// }
 
 pub fn day10p2(path: String) -> Int {
   let inp =
@@ -218,7 +222,7 @@ pub fn day10p2(path: String) -> Int {
   let assert Ok(f) = list.first(inp)
 
   let #(target, buttons) = f
-  let sol = find_solution_p2(target, buttons)
+  // let sol = find_solution_p2(target, buttons)
   // let results =
   //   list.map(inp, fn(part) {
   //     let #(target, buttons) = part

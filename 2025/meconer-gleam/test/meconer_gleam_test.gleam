@@ -140,6 +140,7 @@ pub fn day10p2_test() {
   let res = day10.day10p2("src/day10/sample.txt")
   assert res == 33
 }
+
 // import day11/day11
 
 // pub fn day11p1_test() {
@@ -151,3 +152,14 @@ pub fn day10p2_test() {
 //   let res = day11.day11p2("src/day11/sample2.txt")
 //   assert res == 2
 // }
+import day12/day12
+
+pub fn day12p1_test() {
+  let res = day12.day12p1("src/day12/sample.txt")
+  assert res == 7
+}
+
+pub fn day12p2_test() {
+  let res = day12.day12p2("src/day12/sample.txt")
+  assert res == 33
+}
