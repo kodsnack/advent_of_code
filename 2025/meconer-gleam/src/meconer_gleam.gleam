@@ -42,7 +42,6 @@ pub fn main() -> Nil {
   let path = "src/day10/input.txt"
   day10.day10p1(path)
   day10.day10p2(path)
-  day10.day10p2_lil(path)
   let path = "src/day11/input.txt"
   day11.day11p1(path)
   day11.day11p2(path)
