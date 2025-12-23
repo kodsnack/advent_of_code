@@ -210,7 +210,7 @@ fn rec_find_solution(machine: Machine) {
             _ -> {
               let machines_with_deltas_removed =
                 list.map(joltage_deltas_and_counts, fn(delta_and_count) {
-                  let #(delta, count) = delta_and_count
+                  let #(delta, count, _combo) = delta_and_count
                   let new_jolts =
                     dict.fold(delta, machine.joltages, fn(acc, key, dval) {
                       dict.upsert(acc, key, fn(opt_val) {
@@ -232,8 +232,10 @@ fn rec_find_solution(machine: Machine) {
                 list.map(machines_with_deltas_removed, fn(machine_and_count) {
                   let #(machine, count) = machine_and_count
                   let half_mach = calc_half_joltages(machine)
-                  let inner_count = 2 * rec_find_solution(half_mach)
-
+                  let inner_count = case rec_find_solution(half_mach) {
+                    ic if ic >= 0 -> 2 * ic
+                    _ -> 999_999
+                  }
                   #(half_mach, count + inner_count)
                 })
                 |> list.reduce(fn(acc, hm) {
@@ -273,7 +275,7 @@ fn find_joltage_deltas_and_counts(
   combos: List(List(Int)),
   machine: Machine,
   odds: List(Int),
-) -> List(#(dict.Dict(Int, Int), Int)) {
+) -> List(#(dict.Dict(Int, Int), Int, List(Int))) {
   list.map(combos, fn(combo) {
     let deltas =
       list.index_fold(combo, dict.new(), fn(acc, el, idx) {
@@ -295,7 +297,7 @@ fn find_joltage_deltas_and_counts(
         }
       })
     let btn_press_cnt = int.sum(combo)
-    #(deltas, btn_press_cnt)
+    #(deltas, btn_press_cnt, combo)
   })
   |> list.filter(fn(deltas) {
     list.index_fold(odds, True, fn(acc, should_be_odd, idx) {
