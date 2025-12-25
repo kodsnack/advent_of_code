@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/list
 import gleam/string
 import simplifile
 
@@ -31,5 +32,29 @@ pub fn find_first(s: String, ch: String, idx: Int) {
         False -> find_first(string.drop_start(s, 1), ch, idx + 1)
       }
     }
+  }
+}
+
+pub fn normalise_newlines(input: String) -> String {
+  string.replace(input, "\r\n", "\n")
+}
+
+pub fn lines(input: String) -> List(String) {
+  let input = normalise_newlines(input)
+  case string.ends_with(input, "\n") {
+    True -> string.drop_end(input, 1)
+    False -> input
+  }
+  |> string.split("\n")
+}
+
+pub fn parsed_lines(input: String, with fun: fn(String) -> a) -> List(a) {
+  lines(input) |> list.map(fun)
+}
+
+pub fn unsafe_int_parse(input: String) -> Int {
+  case int.parse(input) {
+    Ok(x) -> x
+    Error(Nil) -> panic as { "Invalid int value \"" <> input <> "\"" }
   }
 }

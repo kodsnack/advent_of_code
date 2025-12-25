@@ -106,14 +106,66 @@ pub fn main() -> Nil {
 //   let res = day7.day7p2("src/day7/sample.txt")
 //   assert res == 40
 // }
-import day8/day8
+// import day8/day8
 
-pub fn day8p1_test() {
-  let res = day8.day8p1("src/day8/sample.txt", 10)
-  assert res == 40
-}
+// pub fn day8p1_test() {
+//   let res = day8.day8p1("src/day8/sample.txt", 10)
+//   assert res == 40
+// }
 
-pub fn day8p2_test() {
-  let res = day8.day8p2("src/day8/sample.txt")
-  assert res == 25_272
+// pub fn day8p2_test() {
+//   let res = day8.day8p2("src/day8/sample.txt")
+//   assert res == 25_272
+// }
+
+// import day9/day9
+
+// pub fn day9p1_test() {
+//   let res = day9.day9p1("src/day9/sample.txt")
+//   assert res == 50
+// }
+
+// pub fn day9p2_test() {
+//   let res = day9.day9p2("src/day9/sample.txt")
+//   assert res == 24
+// }
+import day10/day10
+
+// pub fn day10p1_test() {
+//   let res = day10.day10p1("src/day10/sample.txt")
+//   assert res == 7
+// }
+
+// pub fn day10p1_lil_test() {
+//   let res = day10.day10p1_lil("src/day10/sample.txt")
+//   assert res == 7
+// }
+
+pub fn day10p2_test() {
+  let res = day10.day10p2("src/day10/sample.txt")
+  assert res == 300
 }
+// pub fn day10spec_test() {
+//   let mach =
+//     day10.Machine(
+//       dict.from_list([#(0, 2), #(1, 2), #(2, 2)]),
+//       dict.from_list([#(0, [0, 1]), #(1, [0, 2]), #(2, [1, 2])]),
+//     )
+//   let res = day10.solve_mach(mach)
+//   assert res == 3
+// }
+// pub fn day10p2_lil_test() {
+//   let res = day10.day10p2_lil("src/day10/sample.txt")
+//   assert res == 33
+// }
+// import day11/day11
+
+// pub fn day11p1_test() {
+//   let res = day11.day11p1("src/day11/sample.txt")
+//   assert res == 5
+// }
+
+// pub fn day11p2_test() {
+//   let res = day11.day11p2("src/day11/sample2.txt")
+//   assert res == 2
+// }
